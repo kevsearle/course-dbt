@@ -1,0 +1,48 @@
+version: 2
+
+sources:
+
+  - name: postgres # source greenery tables originally copied from postgres
+    schema: public # this is the schema our raw data lives in
+    database: raw # this is the name of our database
+
+    quoting:
+      database: false
+      schema: false
+      identifier: false
+
+    freshness:
+      warn_after: {count: 24, period: hour}
+      error_after: {count: 48, period: hour}
+
+    tables:
+      - name: addresses
+        description: >
+          addresses
+
+      - name: events
+        loaded_at_field: created_at
+        description: >
+          User events occuring on the platform
+
+      - name: orders
+        loaded_at_field: created_at
+        description: >
+          Details of orders, including delivery, cost, status etc
+
+      - name: order_items
+        description: > 
+          Line items of the order, intersecting order with product
+
+      - name: products
+        description: >
+          product catalogue available from greenery
+
+      - name: promos
+        description: >
+          Promotional offers including status and related discount
+
+      - name: users
+        loaded_at_field: created_at
+        description: >
+          Customer details with contact details and delivery address.

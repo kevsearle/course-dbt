@@ -1,0 +1,13 @@
+version: 2
+
+models:
+  - name: stg_postgres_addresses
+    description: addresses
+
+  - name: stg_postgres_orders
+    description: orders
+
+  - name: stg_postrges_events
+    description: events
+  
+          
