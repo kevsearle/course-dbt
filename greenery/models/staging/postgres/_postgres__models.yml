@@ -70,7 +70,6 @@ models:
   - name: stg_postgres__order_items
     description: Products that are line items on an order.
     columns:  
-    
       - name: order_guid
         tests:  
           - not_null
