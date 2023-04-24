@@ -1,0 +1,86 @@
+--How many users do we have?
+
+SELECT COUNT(*)
+FROM stg_postgres_users;
+
+--Answer: 130
+
+--On average, how many orders do we receive per hour?
+
+WITH created_during_hour AS (
+    SELECT created_at
+          ,CONCAT(year(created_at), MONTH(created_at), DAY(created_at), hour(created_at)) AS YMDH
+    FROM stg_postgres__orders
+)
+, orders_per_hour AS (
+    SELECT ymdh
+          ,COUNT(*) order_count
+    FROM created_during_hour
+    GROUP BY ymdh
+)
+select SUM(order_count)/count(*) as average_orders_per_hour
+from orders_per_hour;
+
+-- Answer 7.53
+
+--On average, how long does an order take from being placed to being delivered?
+
+WITH elapsed_delivery AS (
+    SELECT DATEDIFF('hours', created_at, delivered_at)  x
+    FROM stg_postgres__orders a
+    WHERE delivered_at IS NOT NULL
+)
+SELECT sum(x)/count(*)
+FROM elapsed_delivery;
+
+-- Answer 93 hours
+
+--How many users have only made one purchase? Two purchases? Three+ purchases?
+-- Note: you should consider a purchase to be a single order. In other words, if a user places one order for 3 products, they are considered to have made 1 purchase.
+
+SELECT user_purchase_count
+      ,COUNT(*) number_of_users
+FROM (
+    SELECT user_guid
+          ,COUNT(*) user_purchase_count
+    FROM stg_postgres__orders
+    GROUP BY user_guid
+)
+GROUP BY user_purchase_count
+ORDER BY user_purchase_count;
+
+/*
+Answer: 
+USER_PURCHASE_COUNT	
+    NUMBER_OF_USERS
+1	25
+2	28
+3	34
+4	20
+5	10
+6	2
+7	4
+8	1
+*/
+
+-- On average, how many unique sessions do we have per hour?
+
+WITH sess_hour AS (
+    SELECT DISTINCT
+           CONCAT(year(created_at), MONTH(created_at), DAY(created_at), hour(created_at)) AS distinct_hour
+          ,session_guid
+    FROM   stg_postgres__events
+) 
+, dist_sess_in_hour AS (
+    SELECT distinct_hour
+          ,COUNT(*) distinct_sess
+    FROM sess_hour
+    GROUP BY distinct_hour
+)
+SELECT SUM(distinct_sess)/COUNT(*)
+FROM dist_sess_in_hour
+;
+
+--Answer 16.32
+
+  
