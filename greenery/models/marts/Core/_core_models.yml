@@ -1,0 +1,33 @@
+version: 2
+
+models:
+  - name: dim_user
+    description: User personal and address information
+    columns:
+      - name: user_guid
+        tests:
+          - not_null
+          - unique
+      - name: first_name
+        tests:
+          - not_null
+      - name: last_name
+        tests:
+          - not_null
+      - name: full_name
+      - name: email
+      - name: phone_number
+      - name: created_at
+      - name: updated_at
+      - name: address_guid
+        tests: 
+        - not_null
+      - name: address
+        tests:
+        - not_null
+      - name: zip_code
+        tests:
+        - not_null
+      - name: state
+      - name: country
+

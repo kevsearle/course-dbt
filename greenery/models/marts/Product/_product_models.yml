@@ -1,0 +1,29 @@
+version: 2
+
+models:
+  - name: fact_page_views
+    description: fact_page_views
+    columns:
+      - name: event_guid
+        tests:
+          - not_null
+          - unique
+      - name: session_guid
+      - name: user_guid
+      - name: page_url
+      - name: created_at
+      - name: created_at_date
+      - name: product_guid
+  - name: fact_daily_products
+    description: fact table aggregated to the day(date) and product levels.
+    columns:
+      - name: product_guid
+        tests:
+          - not_null
+      - name: created_at_date
+        tests:
+          - not_null
+
+  
+
+

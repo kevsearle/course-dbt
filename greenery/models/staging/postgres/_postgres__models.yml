@@ -1,13 +1,97 @@
 version: 2
 
 models:
-  - name: stg_postgres_addresses
-    description: addresses
+  - name: stg_postgres__addresses
+    description: User addresses used for shipping.  A user can only have one address
+    columns:
+      - name: address_guid
+        tests:
+          - not_null
+          - unique
+  - name: stg_postgres__users
+    description: Customer type users of the Greenery website.
+    columns:  
+      - name: user_guid
+        tests: 
+          - not_null
+          - unique
+      - name: address_guid
+        tests:
+          - not_null
+      - name: created_at
+        tests:
+          - not_null
+      - name: email
+        tests:
+          - not_null
+      - name: last_name
+        tests:
+          - not_null
+  - name: stg_postgres__events
+    description: different types of events initiated by users on the website.
+    columns:
+      - name: event_guid
+        tests:
+          - not_null
+          - unique
+      - name: session_guid
+        tests:
+          - not_null
+      - name: user_guid
+        tests:
+          - not_null
+      - name: event_type
+        tests:
+          - not_null
+      - name: page_url
+        tests:
+          - not_null
+      - name: created_at
+        tests:
+          - not_null
 
-  - name: stg_postgres_orders
-    description: orders
 
-  - name: stg_postrges_events
-    description: events
+  - name: stg_postgres__orders
+    description: Greenery orders with current order status.
+    columns:
+      - name: order_guid
+        tests:
+          - not_null
+          - unique
+      - name: user_guid
+        tests: 
+          - not_null
+      - name: created_at
+        tests:
+          - not_null
+      - name: status_name
+        tests:  
+          - not_null
+  - name: stg_postgres__order_items
+    description: Products that are line items on an order.
+    columns:  
+    
+      - name: order_guid
+        tests:  
+          - not_null
+      - name: product_guid
+        tests:
+          - not_null
+  - name: stg_postgres__products
+    description: Greenery products for sale including price and stock levels.
+    columns:  
+      - name: product_guid
+        tests:
+          - unique
+          - not_null
+      - name: price
+        tests:
+          - positive_values
+
+
+  - name: stg_postgres__promos
+
+
+
   
           
