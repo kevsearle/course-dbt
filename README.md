@@ -254,6 +254,8 @@ fb0e8be7-5ac4-4a76-a1fa-2cc4bf0b2d80
 
 # Week 3 Submission
 
+I've been a bit more careful with my formatting this week :)
+
 ## Part 1 - Create new models to answer the first two questions 
 
 Just using SQL from the existing models could get the conversion rates like this:
