@@ -256,7 +256,7 @@ fb0e8be7-5ac4-4a76-a1fa-2cc4bf0b2d80
 
 Just using SQL from the existing models could get the conversion rates like this:
 
-`WITH ps as (
+WITH ps as (
     -- Unique purchase sessions per product
     select oi.product_guid
           ,COUNT(DISTINCT e.session_guid) count_distinct_purchases
@@ -281,7 +281,7 @@ SELECT nvl(ps.product_guid, vs.product_guid) AS product_guid
       ,count_distinct_purchases / count_distinct_views conversion_rate
 FROM ps
 FULL OUTER JOIN vs ON vs.product_guid = ps.product_guid
-;`
+;
 
 
 
