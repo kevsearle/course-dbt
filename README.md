@@ -254,4 +254,55 @@ fb0e8be7-5ac4-4a76-a1fa-2cc4bf0b2d80
 
 # Week 3 Submission
 
+Just using SQL from the existing models could get the conversion rates like this:
+
+`WITH ps as (
+    -- Unique purchase sessions per product
+    select oi.product_guid
+          ,COUNT(DISTINCT e.session_guid) count_distinct_purchases
+    from stg_postgres__events e
+    JOIN  stg_postgres__orders o ON o.order_guid = e.order_guid
+    JOIN  stg_postgres__order_items oi ON oi.order_guid = o.order_guid
+    WHERE event_type = 'checkout'
+    GROUP BY oi.product_guid
+)
+, vs AS (
+-- Unique view sessions per product
+    select p.product_guid
+          ,COUNT(DISTINCT e.session_guid) count_distinct_views
+    from stg_postgres__events e
+    JOIN  stg_postgres__products p ON p.product_guid = e.product_guid 
+    WHERE event_type = 'page_view'
+    GROUP BY p.product_guid
+)
+SELECT nvl(ps.product_guid, vs.product_guid) AS product_guid
+      ,count_distinct_purchases
+      ,count_distinct_views
+      ,count_distinct_purchases / count_distinct_views conversion_rate
+FROM ps
+FULL OUTER JOIN vs ON vs.product_guid = ps.product_guid
+;`
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
