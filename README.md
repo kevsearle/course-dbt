@@ -418,9 +418,95 @@ models:
     example:
       +materialized: view
 ```
+
 The snowflake query history shows the grant being created for every model....
 
 ![image](https://user-images.githubusercontent.com/130085262/235443340-0b4e6d2c-46e9-46a7-b45a-c7773349df63.png)
+
+
+## Part 4:  After learning about dbt packages, we want to try one out and apply some macros or tests.
+
+I installed a dbt_date package (via the packages.yml)
+
+```
+packages:
+  - package: dbt-labs/dbt_utils
+    version: 0.8.2
+  - package: calogica/dbt_date
+    version: [">=0.7.0", "<0.8.0"]
+```
+
+The package macro is then called in a dim_date model
+
+```
+{{
+  config(
+    materialised = 'table'
+  )
+}}
+
+{{ dbt_date.get_date_dimension('01/01/2018', '01/01/2024') }}
+```
+
+and this produces a date dimension with lots of helpful attributes...
+
+![image](https://user-images.githubusercontent.com/130085262/235443964-5ed3fd9c-1c41-4cc2-9f38-3c5731de67bb.png)
+
+## Part 5: After improving our project with all the things that we have learned about dbt, we want to show off our work!
+
+![image](https://user-images.githubusercontent.com/130085262/235444038-d49ed459-e0e2-4a40-907b-4be641510070.png)
+
+
+## Part 6. dbt Snapshots
+
+This shows the whole snapshot and marks which products have an inventory change from week 2 to week 3
+
+```
+WITH products_week2 AS (
+    -- one row per product which is the max dbt_updated_at record that is less than 2023-04-29
+    -- so this is whatever state it's in at the end of the 2nd week 
+    SELECT *
+    FROM   products_snapshot ps1
+    WHERE date(dbt_updated_at) = (
+        SELECT MAX(DATE(dbt_updated_at))
+        FROM products_snapshot ps2
+        WHERE DATE(ps2.dbt_updated_at) < '2023-04-29'
+        AND ps2.product_id = ps1.product_id
+    ) 
+)
+, updated_products_week3 AS (
+    -- these are all the products that got updated in the 3rd week
+    SELECT *
+    FROM   products_snapshot
+    WHERE DATE(dbt_updated_at) = '2023-04-29'
+    
+)
+
+, changed_products AS (
+    -- this is a list of products where the inventory changed w2 to w3
+    SELECT pw3.product_id
+          ,pw3.name
+    FROM updated_products_week3 pw3
+    JOIN products_week2 pw2 ON pw2.product_id = pw3.product_id
+    where pw3.inventory <> pw2.inventory
+)
+  SELECT * FROM changed_products
+  -- this provides the full snapshot picture and marks which
+  -- products had an inventory change on w2 to w3.
+  SELECT ps.*
+        ,CASE
+            WHEN cp.product_id IS NOT NULL THEN 1 
+            ELSE NULL
+         END AS changed_w2_w3
+  FROM products_snapshot ps
+  LEFT JOIN changed_products cp ON cp.product_id = ps.product_id AND ps.dbt_valid_to IS NULL
+  ORder by ps.product_id, dbt_updated_at
+;
+```
+
+These are the changed products...
+
+![image](https://user-images.githubusercontent.com/130085262/235444302-6e268a74-447e-4bd7-8a38-cd4a30981b2b.png)
 
 
 
