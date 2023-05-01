@@ -418,7 +418,9 @@ models:
     example:
       +materialized: view
 ```
+The snowflake query history shows the grant being created for every model....
 
+![image](https://user-images.githubusercontent.com/130085262/235443340-0b4e6d2c-46e9-46a7-b45a-c7773349df63.png)
 
 
 
