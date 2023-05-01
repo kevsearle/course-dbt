@@ -254,6 +254,8 @@ fb0e8be7-5ac4-4a76-a1fa-2cc4bf0b2d80
 
 # Week 3 Submission
 
+## Part 1 - Create new models to answer the first two questions 
+
 Just using SQL from the existing models could get the conversion rates like this:
 
 ```
@@ -327,6 +329,67 @@ d3e228db-8ca5-42ad-bb0a-2148e876cc59	26	56	0.464286
 c17e63f7-0d28-4a95-8248-b01ea354840e	30	55	0.545455
 e5ee99b6-519f-4218-8b41-62f48f59f700	27	66	0.409091
 e706ab70-b396-4d30-a6b2-a1ccf3625b52	28	56	0.500000
+```
+
+The OVERALL CONVERSION RATE
+
+```
+SELECT SUM(count_distinct_purchases) / SUM(count_distinct_views) 
+FROM fact_session_event_counts_per_product;
+
+-- 0.457209
+```
+
+## Part 2 - We’re getting really excited about dbt macros after learning more about them and want to apply them to improve our dbt project. 
+
+Created aggregate_event_types.sql macro which pulls the event types dynamically from the database and creates appropriate case statements to count up the events per type.
+
+```
+{% macro aggregate_event_types() %}
+
+    {% set event_type_list = dbt_utils.get_column_values (table= ref('stg_postgres__events'), column = 'event_type')  %}
+
+    {% for event_type in event_type_list %}
+        ,SUM(CASE WHEN event_type = '{{ event_type }}' THEN 1 ELSE 0 END) AS macro_generated_{{ event_type }}_count
+    {% endfor %}
+
+{% endmacro %}
+```
+
+which is used like this in int_week3_daily_events_by_product.sql:
+
+```
+{{
+  config(
+    materialised = 'table'
+  )
+}}
+
+WITH events AS (
+  SELECT * FROM {{ ref('stg_postgres__events') }}
+)
+
+, final AS (
+    SELECT 
+         DATE(created_at) AS created_at_date
+        ,product_guid
+        ,COUNT(DISTINCT session_guid) AS distinct_session_count
+        ,COUNT(DISTINCT user_guid) AS distinct_user_count
+        ,COUNT(DISTINCT order_guid) AS distinct_order_count
+        ,SUM(CASE WHEN event_type = 'add_to_cart'     THEN 1 ELSE 0 END) AS add_to_cart_count
+        ,SUM(CASE WHEN event_type = 'checkout'        THEN 1 ELSE 0 END) AS checkout_count
+        ,SUM(CASE WHEN event_type = 'package_shipped' THEN 1 ELSE 0 END) AS package_shipped_count
+        ,SUM(CASE WHEN event_type = 'page_view'       THEN 1 ELSE 0 END) AS page_view_count
+
+        {{ aggregate_event_types() }}
+
+    FROM events
+    WHERE product_guid IS NOT NULL -- some events are not related to products
+    GROUP BY 
+         created_at_date
+        ,product_guid
+)
+SELECT * FROM final
 ```
 
 
