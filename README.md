@@ -356,7 +356,7 @@ Created aggregate_event_types.sql macro which pulls the event types dynamically 
 {% endmacro %}
 ```
 
-which is used like this in int_week3_daily_events_by_product.sql:
+which is used like this in int_week3_daily_events_by_product.sql (n.b. I left the existing case statements in just so it was easy to compare the old and new):
 
 ```
 {{
@@ -392,16 +392,32 @@ WITH events AS (
 SELECT * FROM final
 ```
 
+## Part 3: We’re starting to think about granting permissions to our dbt models in our snowflake database so that other roles can have access to them.
 
+Created a macro to grant the permission:
 
+```
+{% macro grant(role) %}
 
+    GRANT SELECT ON {{ this }} TO {{ role }};
 
+{% endmacro %}
+```
 
+The macro is referenced from the dbt_project.yml
 
-
-
-
-
+```
+# In this example config, we tell dbt to build all models in the example/
+# directory as views. These settings can be overridden in the individual model
+# files using the `{{ config(...) }}` macro.
+models:
+  greenery:
+    +post-hook:
+      - "{{ grant(role='reporting') }}"
+    # Config indicated by + and applies to all files under models/example/
+    example:
+      +materialized: view
+```
 
 
 
