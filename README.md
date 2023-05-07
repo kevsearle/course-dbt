@@ -515,6 +515,7 @@ These are the changed products...
 
 ## Part 1. dbt Snapshots
 
+```
 WITH products_week3 AS (
     -- one row per product which is the max dbt_updated_at record that is less than 2023-04-29
     -- so this is whatever state it's in at the end of the 2nd week 
@@ -555,6 +556,7 @@ WITH products_week3 AS (
   LEFT JOIN changed_products cp ON cp.product_id = ps.product_id AND ps.dbt_valid_to IS NULL
   ORder by ps.product_id, dbt_updated_at
 ;
+```
 
 /*
 These products have changed inventory week3 to week 4
