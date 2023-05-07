@@ -511,7 +511,62 @@ These are the changed products...
 ![image](https://user-images.githubusercontent.com/130085262/235444302-6e268a74-447e-4bd7-8a38-cd4a30981b2b.png)
 
 
-#Week 4
+# Week 4 Submission
+
+## Part 1. dbt Snapshots
+
+WITH products_week3 AS (
+    -- one row per product which is the max dbt_updated_at record that is less than 2023-04-29
+    -- so this is whatever state it's in at the end of the 2nd week 
+    SELECT *
+    FROM   products_snapshot ps1
+    WHERE date(dbt_updated_at) = (
+        SELECT MAX(DATE(dbt_updated_at))
+        FROM products_snapshot ps2
+        WHERE DATE(ps2.dbt_updated_at) < '2023-05-05'
+        AND ps2.product_id = ps1.product_id
+    ) 
+)
+, updated_products_week4 AS (
+    -- these are all the products that got updated in the 3rd week
+    SELECT *
+    FROM   products_snapshot
+    WHERE DATE(dbt_updated_at) = '2023-05-05'
+    
+)
+
+, changed_products AS (
+    -- this is a list of products where the inventory changed w2 to w3
+    SELECT pw3.product_id
+          ,pw3.name
+    FROM updated_products_week4 pw4
+    JOIN products_week3 pw3 ON pw3.product_id = pw4.product_id
+    where pw4.inventory <> pw3.inventory
+)
+  --SELECT * FROM changed_products
+  -- this provides the full snapshot picture and marks which
+  -- products had an inventory change on w2 to w3.
+  SELECT ps.*
+        ,CASE
+            WHEN cp.product_id IS NOT NULL THEN 1 
+            ELSE NULL
+         END AS changed_w3_w4
+  FROM products_snapshot ps
+  LEFT JOIN changed_products cp ON cp.product_id = ps.product_id AND ps.dbt_valid_to IS NULL
+  ORder by ps.product_id, dbt_updated_at
+;
+
+/*
+These products have changed inventory week3 to week 4
+PRODUCT_ID	NAME
+4cda01b9-62e2-46c5-830f-b7f262a58fb1	Pothos
+fb0e8be7-5ac4-4a76-a1fa-2cc4bf0b2d80	String of pearls
+b66a7143-c18a-43bb-b5dc-06bb5d1d3160	ZZ Plant
+be49171b-9f72-4fc9-bf7a-9a52e259836b	Monstera
+689fb64e-a4a2-45c5-b9f2-480c2155624d	Bamboo
+55c6a062-5f4a-4a8b-a8e5-05ea5e6715a3	Philodendron
+*/
+
 
 
 
