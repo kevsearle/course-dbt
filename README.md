@@ -714,6 +714,32 @@ Which results in this documentation in the DAG (in red).
 
 
 
+## Part 3 Reflection questions 
+
+Pitch to a decision maker.
+
+Code reusability: dbt allows you to write modular, reusable code that can be used across multiple projects. This saves time and reduces the chances of errors, as you don't need to write the same code over and over again.
+
+Improved data quality: dbt allows you to implement data validations and quality checks, which helps to ensure that your data is accurate and consistent.
+
+Easy collaboration: dbt is designed to facilitate collaboration between data analysts, engineers, and other stakeholders. It makes it easy to share code, collaborate on projects, and maintain a consistent data model.
+
+Version control: dbt integrates with version control systems like Git, allowing you to easily track changes to your code and collaborate with others.
+
+Testing: dbt provides a testing framework that allows you to test your data transformation code and catch errors before they cause problems in production.
+
+Documentation: dbt makes it easy to document your data transformation processes, which helps with knowledge transfer and ensures that your team has a clear understanding of your data pipelines.
+
+Scalability: dbt is built to scale with your data transformation needs. It can handle large datasets and complex data transformations, and is designed to be efficient and fast.
+
+
+
+
+
+
+
+
+
 
 
 
