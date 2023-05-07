@@ -687,7 +687,7 @@ ORDER BY page_view_to_checkout_drop_off_rate DESC
 
 ![image](https://user-images.githubusercontent.com/130085262/236694205-b533ebfe-d09f-488d-9d48-fc2a3254fa15.png)
 
-## An exposure was added so that we know that this fact table contributes to a Product Funnel Dashboard....
+An exposure was added so that we know that this fact table contributes to a Product Funnel Dashboard....
 
 This in an exposures.yml...
 
@@ -710,7 +710,7 @@ exposures:
 
 Which results in this documentation in the DAG (in red).
 
-![image](https://user-images.githubusercontent.com/130085262/236694341-70243042-fa22-4909-87e6-ccb2c0e7d10b.png)
+![image](https://user-images.githubusercontent.com/130085262/236694419-1bf9695b-cb86-4ddd-80f7-b5fd4128a0b7.png)
 
 
 
