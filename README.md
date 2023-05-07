@@ -718,7 +718,7 @@ Which results in this documentation in the DAG (in red).
 
 Pitch to a decision maker.
 
-Code reusability: dbt allows you to write modular, reusable code that can be used across multiple projects. This saves time and reduces the chances of errors, as you don't need to write the same code over and over again.
+* Code reusability: dbt allows you to write modular, reusable code that can be used across multiple projects. This saves time and reduces the chances of errors, as you don't need to write the same code over and over again.
 
 Improved data quality: dbt allows you to implement data validations and quality checks, which helps to ensure that your data is accurate and consistent.
 
