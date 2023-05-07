@@ -558,16 +558,161 @@ WITH products_week3 AS (
 ;
 ```
 
-/*
-These products have changed inventory week3 to week 4
-PRODUCT_ID	NAME
-4cda01b9-62e2-46c5-830f-b7f262a58fb1	Pothos
-fb0e8be7-5ac4-4a76-a1fa-2cc4bf0b2d80	String of pearls
-b66a7143-c18a-43bb-b5dc-06bb5d1d3160	ZZ Plant
-be49171b-9f72-4fc9-bf7a-9a52e259836b	Monstera
-689fb64e-a4a2-45c5-b9f2-480c2155624d	Bamboo
-55c6a062-5f4a-4a8b-a8e5-05ea5e6715a3	Philodendron
-*/
+![image](https://user-images.githubusercontent.com/130085262/236693519-79c82e6d-77d1-48b1-bf14-633ff3b62fb3.png)
+
+Which products had the most fluxtuations in inventory?
+-> We can use the LAG function to get the inventory change.
+
+```
+WITH product_inventory_changes AS (
+    SELECT product_id
+          ,name
+          ,inventory
+          ,dbt_updated_at
+          ,CASE
+              WHEN dbt_updated_at = (
+                  SELECT MIN(dbt_updated_at)
+                  FROM products_snapshot
+                  WHERE product_id = ps.product_id
+              ) THEN 1
+              ELSE 0
+           END initial_inventory
+          ,LAG(inventory, 1, 0) OVER (PARTITION BY product_id ORDER BY dbt_updated_at) AS previous_inventory
+          ,ABS(inventory - previous_inventory) AS absolute_inventory_change
+    FROM   products_snapshot ps
+    ORDER BY PRODUCT_ID, DBT_UPDATED_AT
+)
+SELECT product_id
+      ,name
+      ,SUM(absolute_inventory_change)
+FROM product_inventory_changes
+WHERE initial_inventory = 0
+GROUP BY 1,2
+ORDER BY SUM(absolute_inventory_change) DESC;
+```
+
+![image](https://user-images.githubusercontent.com/130085262/236693674-f1261df3-55ea-4f48-8753-be0ee295d166.png)
+
+...and to get which products had 0 inventory at any tiem
+
+```
+SELECT *
+FROM products_snapshot
+WHERE inventory = 0;
+```
+
+![image](https://user-images.githubusercontent.com/130085262/236693717-58e7ca57-6a1e-469b-ba47-56877aad119c.png)
+
+## Part 2. Modeling challenge.
+
+To answer this I created a new fact table - fact_product_funnel.
+This sums the distinct sessions for the 3 different event types of interest (I didn't bother using any macros this time)
+for each product - we'll definitely want to know what the dropoff rates are at the product level as some products might 
+be worse than others.
+I've added the drop off rates onto the fact table although might be getter done in the BI tool.
+
+```
+{{
+  config(
+    materialised = 'table'
+  )
+}}
+
+WITH events AS (
+  SELECT * FROM {{ ref('stg_postgres__events') }}
+)
+, orders AS (
+  SELECT * FROM {{ ref('stg_postgres__orders') }}
+)
+, order_items AS (
+  SELECT * FROM {{ ref('stg_postgres__order_items') }}
+)
+, final AS (
+  WITH product_checkouts AS (
+      SELECT oi.product_guid
+            ,COUNT(DISTINCT e.session_guid) distinct_product_checkout_sessions
+      FROM events e
+      JOIN orders o ON o.order_guid = e.order_guid AND e.event_type = 'checkout'
+      JOIN order_items oi ON oi.order_guid = o.order_guid
+      GROUP BY oi.product_guid
+  )
+  , product_pv_atc AS (
+      SELECT product_guid
+            ,COUNT(DISTINCT CASE WHEN event_type = 'page_view' THEN session_guid ELSE null END) distinct_product_page_view_sessions
+            ,COUNT(DISTINCT CASE WHEN event_type = 'add_to_cart' THEN session_guid ELSE null END) distinct_product_add_to_cart_sessions
+      FROM  events
+      GROUP BY product_guid
+  )
+  SELECT COALESCE(p1.product_guid, p2.product_guid) AS product_guid
+        ,distinct_product_page_view_sessions
+        ,distinct_product_add_to_cart_sessions
+        ,distinct_product_checkout_sessions
+        ,DIV0((distinct_product_page_view_sessions - distinct_product_add_to_cart_sessions), distinct_product_page_view_sessions)*100 AS page_view_to_cart_drop_off_rate
+        ,DIV0((distinct_product_add_to_cart_sessions - distinct_product_checkout_sessions), distinct_product_add_to_cart_sessions)*100 AS cart_to_checkout_drop_off_rate
+        ,DIV0((distinct_product_page_view_sessions - distinct_product_checkout_sessions), distinct_product_page_view_sessions)*100 AS page_view_to_checkout_drop_off_rate
+  FROM product_checkouts p1
+  FULL OUTER JOIN product_pv_atc p2 ON p1.product_guid = p2.product_guid
+  ORDER BY page_view_to_checkout_drop_off_rate desc)
+
+SELECT * FROM final
+```
+
+From the fact table we can get the overall dropoff rates like this:
+```
+SELECT DIV0((SUM(distinct_product_page_view_sessions)   - SUM(distinct_product_add_to_cart_sessions)), SUM(distinct_product_page_view_sessions))*100 AS page_view_to_cart_drop_off_rate
+      ,DIV0((SUM(distinct_product_add_to_cart_sessions) - SUM(distinct_product_checkout_sessions)), SUM(distinct_product_add_to_cart_sessions))*100 AS cart_to_checkout_drop_off_rate
+      ,DIV0((SUM(distinct_product_page_view_sessions)   - SUM(distinct_product_checkout_sessions)), SUM(distinct_product_page_view_sessions))*100 AS page_view_to_checkout_drop_off_rate
+FROM fact_product_funnel
+;
+```
+
+![image](https://user-images.githubusercontent.com/130085262/236694086-101e183c-ba80-496d-83c2-1a7c2eb8b61e.png)
+
+Once the product has been placed in the cart, it's much more likely then to make it through to checkout (which seems reasonable).
+
+At the product level the dropoff rates look like this (joining to the product staging table as we haven't created a product dimension).
+
+```
+-- list the product drop off rates between funnel stages order by worst overall drop-off
+SELECT p.product_guid
+      ,p.name
+      ,pf.page_view_to_cart_drop_off_rate
+      ,pf.cart_to_checkout_drop_off_rate
+      ,pf.page_view_to_checkout_drop_off_rate 
+FROM   fact_product_funnel pf
+JOIN   stg_postgres__products p ON p.product_guid = pf.product_guid
+ORDER BY page_view_to_checkout_drop_off_rate DESC
+; 
+```
+
+![image](https://user-images.githubusercontent.com/130085262/236694205-b533ebfe-d09f-488d-9d48-fc2a3254fa15.png)
+
+## An exposure was added so that we know that this fact table contributes to a Product Funnel Dashboard....
+
+This in an exposures.yml...
+
+```
+Version: 2
+
+exposures:  
+  - name: Product Funnel Dashboard
+    description: >
+      Models that are critical to our product funnel dashboard
+    type: dashboard
+    maturity: high
+    owner:
+      name: Kevin Searle
+      email: kevin.searle@sony.com
+    depends_on:
+      - ref('fact_product_funnel')
+
+```
+
+Which results in this documentation in the DAG (in red).
+
+![image](https://user-images.githubusercontent.com/130085262/236694341-70243042-fa22-4909-87e6-ccb2c0e7d10b.png)
+
+
 
 
 
